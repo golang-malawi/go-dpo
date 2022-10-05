@@ -1,5 +1,9 @@
 # Unofficial Go Library for DPO
 
+> NOTE: This is a work in progress.
+
+Unofficial library for working with  DPOs APIs for payment processing in Go applications.
+
 ## Usage
 
 ```go
@@ -37,3 +41,12 @@ func main() {
 	fmt.Println(chargeResponse)
 }
 ```
+
+# LICENSE
+
+See LICENSE 
+
+---
+
+NNDI 
+
