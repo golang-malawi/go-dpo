@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -15,10 +16,12 @@ type Client struct {
 	http  *http.Client
 }
 
-//NewClient creates a new testing/debug client for 3G service.
-func NewClient(companyToken string) *Client {
+// NewClient creates a new testing/debug client for 3G service
+// companyToken the token to use for API calls
+// debug whether to enable debug-mode or not - debug mode uses the test URLs instead of live URLs.
+func NewClient(companyToken string, debug bool) *Client {
 	return &Client{
-		Debug: true,
+		Debug: debug,
 		Token: companyToken,
 		http: &http.Client{
 			Timeout: 30 * time.Second,
@@ -26,14 +29,10 @@ func NewClient(companyToken string) *Client {
 	}
 }
 
+// NewLiveClient creates a new Client that has debug set to false
+// companyToken the token to use for API calls
 func NewLiveClient(companyToken string) *Client {
-	return &Client{
-		Debug: false,
-		Token: companyToken,
-		http: &http.Client{
-			Timeout: 30 * time.Second,
-		},
-	}
+	return NewClient(companyToken, false)
 }
 
 func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, error) {
@@ -96,7 +95,8 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 		Request:          OpChargeTokenCreditCard,
 		TransactionToken: token.TransToken,
 		CreditCardNumber: cardNumber,
-		CreditCardExpiry: cardExpiry,
+		// The API doesn't accept  an expiry with MM/YY it requires MMYY
+		CreditCardExpiry: strings.ReplaceAll(cardExpiry, "/", ""),
 		CreditCardCVV:    cvv,
 		CardHolderName:   cardHolder,
 		ThreeD: ThreeDRequest{
@@ -121,6 +121,11 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 	if err != nil {
 		return nil, fmt.Errorf("failed to form XML request: %s got: %v", string(xmlData), err)
 	}
+
+	if c.Debug {
+		fmt.Printf("using request body: %s\n", string(xmlData))
+	}
+
 	r := bytes.NewReader(xmlData)
 	resp, err := c.http.Post(url, "text/xml", r)
 	// got an error response,
