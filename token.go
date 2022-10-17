@@ -46,7 +46,7 @@ func (c *Client) NewCreateTokenRequest(companyToken string, paymentCurrency stri
 			CompanyRef:       c.GenerateRef(),
 			RedirectURL:      "",
 			BackURL:          "",
-			CompanyRefUnique: "",
+			CompanyRefUnique: 0, // 0 - not unique, 1 - duplicate request
 			PTL:              "5",
 		},
 		Services: []Service{},
@@ -88,7 +88,7 @@ type CreateTokenTransaction struct {
 	CompanyRef       string `xml:"CompanyRef"`
 	RedirectURL      string `xml:"RedirectURL"`
 	BackURL          string `xml:"BackURL"`
-	CompanyRefUnique string `xml:"CompanyRefUnique"`
+	CompanyRefUnique int    `xml:"CompanyRefUnique"`
 	PTL              string `xml:"PTL"`
 }
 

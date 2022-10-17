@@ -13,10 +13,10 @@ import (
 )
 
 type Client struct {
-	Debug bool   // Determines whether to use test or live url
-	Token string // Credentials key for the company
-	http  *http.Client
-
+	Debug       bool   // Determines whether to use test or live url
+	Token       string // Credentials key for the company
+	http        *http.Client
+	maxAttempts int // Maximum number of attempts per operation
 	GenerateRef func() string
 }
 
@@ -28,6 +28,16 @@ func defaultCompanyRefGenerator() string {
 		panic(err) // TODO: don't panic in a library
 	}
 	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+func xmlMarshalWithHeader(data any) ([]byte, error) {
+	xmlstring, err := xml.Marshal(data) // xml.MarshalIndent(data, "", "    ")
+	if err != nil {
+		return nil, err
+	}
+
+	xmlstring = []byte(xml.Header + string(xmlstring))
+	return xmlstring, nil
 }
 
 func (c *Client) MakePaymentURL(token *CreateTokenResponse) string {
@@ -44,6 +54,7 @@ func NewClient(companyToken string, debug bool) *Client {
 	return &Client{
 		Debug:       debug,
 		Token:       companyToken,
+		maxAttempts: 5, // other DPO libraries use 10: see - TODO: add link
 		GenerateRef: defaultCompanyRefGenerator,
 		http: &http.Client{
 			Timeout: 30 * time.Second,
@@ -58,14 +69,13 @@ func NewLiveClient(companyToken string) *Client {
 }
 
 func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, error) {
-	//TODO: Validate the token
 	url := TestApiUrl
 	if !c.Debug {
 		url = LiveApiUrl
 	} else {
 		// TODO: log that we are using debug
 	}
-	xmlData, err := xml.Marshal(token)
+	xmlData, err := xmlMarshalWithHeader(token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to form XML request: %s got: %v", string(xmlData), err)
 	}
@@ -96,7 +106,6 @@ func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, e
 		if tokenResponse.IsError() {
 			return nil, fmt.Errorf("failed to charge card: %s", tokenResponse.ResultExplanation)
 		}
-
 		return &tokenResponse, nil
 	}
 
@@ -117,7 +126,7 @@ func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, 
 	} else {
 		// TODO: log that we are using debug
 	}
-	xmlData, err := xml.Marshal(verifyRequest)
+	xmlData, err := xmlMarshalWithHeader(verifyRequest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to form XML request: %s got: %v", string(xmlData), err)
 	}
@@ -127,31 +136,40 @@ func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, 
 	}
 
 	r := bytes.NewReader(xmlData)
-	resp, err := c.http.Post(url, "text/xml", r)
-	// got an error response,
-	if err != nil {
-		return nil, err
-	}
-	bodyData, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read body: %s got: %v", string(bodyData), err)
-	}
-	if c.Debug {
-		fmt.Printf("got response body: %s\n", string(bodyData))
-	}
-	var verifyTokenResponse VerifyTokenResponse
-	if resp.StatusCode == http.StatusOK {
-		err = xml.Unmarshal(bodyData, &verifyTokenResponse)
+	var created bool = false
+
+	maxAttempts := c.maxAttempts
+
+	for i := 0; !created && i < maxAttempts; i++ {
+		resp, err := c.http.Post(url, "text/xml", r)
+		// got an error response,
 		if err != nil {
-			return nil, fmt.Errorf("failed unmarshal response: %v", err)
+			return nil, err
 		}
-		// if verifyTokenResponse == "900".IsError() {
-		// 	return nil, fmt.Errorf("failed to charge card: %s", verifyTokenResponse.ResultExplanation)
-		// }
-		return &verifyTokenResponse, nil
+		bodyData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read body: %s got: %v", string(bodyData), err)
+		}
+		if c.Debug {
+			fmt.Printf("got response body: %s\n", string(bodyData))
+		}
+		var verifyTokenResponse VerifyTokenResponse
+		if resp.StatusCode == http.StatusOK {
+			err = xml.Unmarshal(bodyData, &verifyTokenResponse)
+			if err != nil {
+				return nil, fmt.Errorf("failed unmarshal response: %v", err)
+			}
+			// if verifyTokenResponse == "900".IsError() {
+			// 	return nil, fmt.Errorf("failed to charge card: %s", verifyTokenResponse.ResultExplanation)
+			// }
+			return &verifyTokenResponse, nil
+		} else {
+
+			return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
+		}
 	}
 
-	return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
+	return nil, fmt.Errorf("failed to process request after %d attempts", c.maxAttempts)
 }
 
 func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string, token *CreateTokenResponse) (*ChargeCreditCardResponse, error) {
@@ -190,7 +208,7 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 	} else {
 		// TODO: log that we are using debug
 	}
-	xmlData, err := xml.Marshal(cardRequest)
+	xmlData, err := xmlMarshalWithHeader(cardRequest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to form XML request: %s got: %v", string(xmlData), err)
 	}
