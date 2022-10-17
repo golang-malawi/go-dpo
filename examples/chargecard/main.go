@@ -16,7 +16,7 @@ func main() {
 
 	client := dpo.NewClient(clientToken, true)
 
-	createTokenRequest := dpo.NewCreateTokenRequest(clientToken, "USD", big.NewFloat(0.003))
+	createTokenRequest := client.NewCreateTokenRequest(clientToken, "USD", big.NewFloat(0.30))
 
 	createTokenRequest.AddService("3854", "Ecommerce", time.Now())
 
@@ -27,10 +27,21 @@ func main() {
 
 	time.Sleep(30 * time.Second)
 
-	chargeResponse, err := client.ChargeCreditCard(os.Getenv("CARD_HOLDER"), os.Getenv("CARD_NUMBER"), os.Getenv("CARD_CVV"), os.Getenv("CARD_EXPIRY"), token)
+	verifyResponse, err := client.VerifyToken(token)
 	if err != nil {
 		log.Fatalf("failed to charge client :%v", err)
 	}
+	fmt.Println("=== verify token", verifyResponse)
 
-	fmt.Println(chargeResponse)
+	if verifyResponse.Result == "900" {
+		fmt.Printf("Click here to verify payment: %s", client.MakePaymentURL(token))
+	}
+
+	// time.Sleep(30 * time.Second)
+	// chargeResponse, err := client.ChargeCreditCard(os.Getenv("CARD_HOLDER"), os.Getenv("CARD_NUMBER"), os.Getenv("CARD_CVV"), os.Getenv("CARD_EXPIRY"), token)
+	// if err != nil {
+	// 	log.Fatalf("failed to charge client :%v", err)
+	// }
+
+	// fmt.Println("=== chargeResponse", chargeResponse)
 }
