@@ -2,6 +2,8 @@ package dpo
 
 import (
 	"bytes"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
@@ -14,6 +16,25 @@ type Client struct {
 	Debug bool   // Determines whether to use test or live url
 	Token string // Credentials key for the company
 	http  *http.Client
+
+	GenerateRef func() string
+}
+
+func defaultCompanyRefGenerator() string {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		// TODO: default to some other random string scheme
+		panic(err) // TODO: don't panic in a library
+	}
+	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+func (c *Client) MakePaymentURL(token *CreateTokenResponse) string {
+	if c.Debug {
+		return fmt.Sprintf("%s?ID=%s", TestPayUrl, token.TransToken)
+	}
+	return fmt.Sprintf("%s?ID=%s", LivePayUrl, token.TransToken)
 }
 
 // NewClient creates a new testing/debug client for 3G service
@@ -21,8 +42,9 @@ type Client struct {
 // debug whether to enable debug-mode or not - debug mode uses the test URLs instead of live URLs.
 func NewClient(companyToken string, debug bool) *Client {
 	return &Client{
-		Debug: debug,
-		Token: companyToken,
+		Debug:       debug,
+		Token:       companyToken,
+		GenerateRef: defaultCompanyRefGenerator,
 		http: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -76,6 +98,57 @@ func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, e
 		}
 
 		return &tokenResponse, nil
+	}
+
+	return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
+}
+
+func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, error) {
+	verifyRequest := &VerifyTokenRequest{
+		Request:          "verifyToken",
+		CompanyToken:     c.Token,
+		TransactionToken: token.TransToken,
+	}
+
+	//TODO: Validate the token
+	url := TestApiUrl
+	if !c.Debug {
+		url = LiveApiUrl
+	} else {
+		// TODO: log that we are using debug
+	}
+	xmlData, err := xml.Marshal(verifyRequest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to form XML request: %s got: %v", string(xmlData), err)
+	}
+
+	if c.Debug {
+		fmt.Printf("using request body: %s\n", string(xmlData))
+	}
+
+	r := bytes.NewReader(xmlData)
+	resp, err := c.http.Post(url, "text/xml", r)
+	// got an error response,
+	if err != nil {
+		return nil, err
+	}
+	bodyData, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read body: %s got: %v", string(bodyData), err)
+	}
+	if c.Debug {
+		fmt.Printf("got response body: %s\n", string(bodyData))
+	}
+	var verifyTokenResponse VerifyTokenResponse
+	if resp.StatusCode == http.StatusOK {
+		err = xml.Unmarshal(bodyData, &verifyTokenResponse)
+		if err != nil {
+			return nil, fmt.Errorf("failed unmarshal response: %v", err)
+		}
+		// if verifyTokenResponse == "900".IsError() {
+		// 	return nil, fmt.Errorf("failed to charge card: %s", verifyTokenResponse.ResultExplanation)
+		// }
+		return &verifyTokenResponse, nil
 	}
 
 	return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))

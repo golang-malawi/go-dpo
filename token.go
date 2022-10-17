@@ -36,14 +36,14 @@ type CreateTokenRequest struct {
 	Services     []Service              `xml:"Services>Service"`
 }
 
-func NewCreateTokenRequest(companyToken string, paymentCurrency string, amount *big.Float) *CreateTokenRequest {
+func (c *Client) NewCreateTokenRequest(companyToken string, paymentCurrency string, amount *big.Float) *CreateTokenRequest {
 	return &CreateTokenRequest{
 		CompanyToken: companyToken,
 		Request:      "createToken",
 		Transaction: CreateTokenTransaction{
 			PaymentAmount:    amount.String(),
 			PaymentCurrency:  paymentCurrency,
-			CompanyRef:       "",
+			CompanyRef:       c.GenerateRef(),
 			RedirectURL:      "",
 			BackURL:          "",
 			CompanyRefUnique: "",
@@ -113,4 +113,22 @@ type Allocations struct {
 type Allocation struct {
 	AllocationID   string `xml:"AllocationID"`
 	AllocationCode string `xml:"AllocationCode"`
+}
+
+type VerifyTokenRequest struct {
+	XMLName xml.Name `xml:"API3G"`
+
+	CompanyToken     string `xml:"CompanyToken"`
+	TransactionToken string `xml:"TransactionToken"`
+	Request          string `xml:"Request"`
+}
+
+type VerifyTokenResponse struct {
+	XMLName xml.Name `xml:"API3G"`
+
+	Result            string `xml:"Result"`
+	ResultExplanation string `xml:"ResultExplanation"`
+	// TransToken        string      `xml:"TransToken,omitempty"`
+	// TransRef          string      `xml:"TransRef,omitempty"`
+	// Allocations       Allocations `xml:"Allocations,omitempty"`
 }
