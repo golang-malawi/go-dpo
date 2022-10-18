@@ -85,7 +85,20 @@ func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, e
 	}
 
 	r := bytes.NewReader(xmlData)
-	resp, err := c.http.Post(url, "text/xml", r)
+
+	req, err := http.NewRequest("POST", url, r)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("User-Agent", "go-dpo: https://github.com/nndi-oss/go-dpo/v1-beta")
+	req.Header.Add("Content-Type", "application/xml")
+	req.Header.Add("Cache-control", "no-cache")
+
+	resp, err := c.http.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
 	// got an error response,
 	if err != nil {
 		return nil, err
@@ -141,11 +154,20 @@ func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, 
 	maxAttempts := c.maxAttempts
 
 	for i := 0; !created && i < maxAttempts; i++ {
-		resp, err := c.http.Post(url, "text/xml", r)
-		// got an error response,
+		req, err := http.NewRequest("POST", url, r)
 		if err != nil {
 			return nil, err
 		}
+		req.Header.Add("User-Agent", "go-dpo: https://github.com/nndi-oss/go-dpo/v1-beta")
+		req.Header.Add("Content-Type", "application/xml")
+		req.Header.Add("Cache-control", "no-cache")
+
+		resp, err := c.http.Do(req)
+
+		if err != nil {
+			return nil, err
+		}
+
 		bodyData, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read body: %s got: %v", string(bodyData), err)
@@ -218,7 +240,19 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 	}
 
 	r := bytes.NewReader(xmlData)
-	resp, err := c.http.Post(url, "text/xml", r)
+	req, err := http.NewRequest("POST", url, r)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("User-Agent", "go-dpo: https://github.com/nndi-oss/go-dpo/v1-beta")
+	req.Header.Add("Content-Type", "application/xml")
+	req.Header.Add("Cache-control", "no-cache")
+
+	resp, err := c.http.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
 	// got an error response,
 	if err != nil {
 		return nil, err

@@ -6,6 +6,4 @@ const (
 
 	LiveApiUrl = "https://secure.3gdirectpay.com/API/v6/"
 	LivePayUrl = "https://secure.3gdirectpay.com/payv2.php"
-
-	PaymentURL = "https://secure.3gdirectpay.com/payv2.php"
 )
