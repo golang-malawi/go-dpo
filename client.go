@@ -40,6 +40,17 @@ func xmlMarshalWithHeader(data any) ([]byte, error) {
 	return xmlstring, nil
 }
 
+// xmlMarshalWithHeaderDebug for debugging, pretty prints the marshalled XML
+func xmlMarshalWithHeaderDebug(data any) ([]byte, error) {
+	xmlstring, err := xml.MarshalIndent(data, "", "    ")
+	if err != nil {
+		return nil, err
+	}
+
+	xmlstring = []byte(xml.Header + string(xmlstring))
+	return xmlstring, nil
+}
+
 func (c *Client) MakePaymentURL(token *CreateTokenResponse) string {
 	if c.Debug {
 		return fmt.Sprintf("%s?ID=%s", TestPayUrl, token.TransToken)
@@ -95,14 +106,10 @@ func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, e
 	req.Header.Add("Cache-control", "no-cache")
 
 	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
 
-	if err != nil {
-		return nil, err
-	}
-	// got an error response,
-	if err != nil {
-		return nil, err
-	}
 	bodyData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read body: %s got: %v", string(bodyData), err)
@@ -278,4 +285,12 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 	}
 
 	return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
+}
+
+func (c *Client) CancelToken() (*CancelTokenResponse, error) {
+	return nil, fmt.Errorf("not implemented!")
+}
+
+func (c *Client) RefundToken() (*RefundTokenResponse, error) {
+	return nil, fmt.Errorf("not implemented!")
 }
