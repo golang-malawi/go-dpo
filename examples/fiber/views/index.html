@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>go-dpo Example</title>
+</head>
+<body>
+    <h1>Welcome to the go-dpo example.</h1>
+    
+    <section id="app-content">
+    <h3>Initiate a Payment for Example</h3>
+    <div class="columns">
+        <form action="/payment/initialize" method="post">
+        <div class="preview-card card text-center">
+            <div class="card-header">Plan Details</div>
+            <div class="card-body">
+                <h2>$ 0.30/month</h2>
+                <h3>Features</h3>
+                <ul>
+                <li>Feature 1</li>
+                <li>Feature 2</li>
+                <li>Feature 3</li>
+                <li>Feature 4</li>
+                <li>Feature 5</li>
+                </ul>
+            </div>
+        </div>
+        <button>Pay Now</button>
+        <small>This will redirect you to our payment processor to complete the Payment.</small>
+        </form>
+    </div>
+    </section>
+</body>
+</html>

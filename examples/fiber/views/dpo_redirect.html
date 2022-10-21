@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>go-dpo Redirecting to Payment procesor</title>
+</head>
+<body>
+  <section id="app-content">
+    <h1>Processing payment for Example...</h1>
+    <div class="columns">
+      <form action="{{ .DPOPaymentURL }}" method="post" name="dpo_redirect">
+        <p>Kindly wait while you're redirected to the DPO Group ...</p>
+        <input name="transToken" type="hidden" value="{{ .transactionToken }}" />
+      </form>
+    </div>
+  </section>
+  <script type="text/javascript">document.forms['dpo_redirect'].submit();</script>
+</body>
+</html>
