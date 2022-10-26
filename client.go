@@ -12,6 +12,9 @@ import (
 	"time"
 )
 
+// Client struct represents a client and it's configuration for working with the DPO API.
+// The client provides functions to initiate, verify, cancel and revoke payment tokens.
+// The client uses a basic net/http http.Client.
 type Client struct {
 	Debug       bool   // Determines whether to use test or live url
 	Token       string // Credentials key for the company
@@ -20,6 +23,7 @@ type Client struct {
 	GenerateRef func() string
 }
 
+// defaultCompanyRefGenerator is a function that generates a string that can be used as a Transaction ID
 func defaultCompanyRefGenerator() string {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
@@ -30,6 +34,7 @@ func defaultCompanyRefGenerator() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
+// xmlMarshallWithHeader marshals dat into XML with the xml header prepended
 func xmlMarshalWithHeader(data any) ([]byte, error) {
 	xmlstring, err := xml.Marshal(data) // xml.MarshalIndent(data, "", "    ")
 	if err != nil {
@@ -51,11 +56,17 @@ func xmlMarshalWithHeaderDebug(data any) ([]byte, error) {
 	return xmlstring, nil
 }
 
+// MakePaymentURL creates a URL which should be passed to the User to redirect to the DPO system to complete the payment
+// Requires a non-nil token created using client.CreateToken
 func (c *Client) MakePaymentURL(token *CreateTokenResponse) string {
-	if c.Debug {
-		return fmt.Sprintf("%s?ID=%s", TestPayUrl, token.TransToken)
+	if token == nil {
+		return ""
 	}
-	return fmt.Sprintf("%s?ID=%s", LivePayUrl, token.TransToken)
+
+	if c.Debug {
+		return fmt.Sprintf("%s?ID=%s", testPayURL, token.TransToken)
+	}
+	return fmt.Sprintf("%s?ID=%s", livePayURL, token.TransToken)
 }
 
 // NewClient creates a new testing/debug client for 3G service
@@ -79,10 +90,15 @@ func NewLiveClient(companyToken string) *Client {
 	return NewClient(companyToken, false)
 }
 
+// CreateToken creates a token that can be used to perform payments. This is the first step in the payment flow with DPO
+// Once the token is created it must be verified using client.VerifyToken
 func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, error) {
-	url := TestApiUrl
+	if token == nil {
+		return nil, fmt.Errorf("token must not be nil")
+	}
+	url := testAPIURL
 	if !c.Debug {
-		url = LiveApiUrl
+		url = liveAPIURL
 	} else {
 		// TODO: log that we are using debug
 	}
@@ -132,6 +148,7 @@ func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, e
 	return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
 }
 
+// VerifyToken verifies the token with DPO site to prepare it for use for actual payment process
 func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, error) {
 	verifyRequest := &VerifyTokenRequest{
 		Request:          "verifyToken",
@@ -140,9 +157,9 @@ func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, 
 	}
 
 	//TODO: Validate the token
-	url := TestApiUrl
+	url := testAPIURL
 	if !c.Debug {
-		url = LiveApiUrl
+		url = liveAPIURL
 	} else {
 		// TODO: log that we are using debug
 	}
@@ -156,7 +173,7 @@ func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, 
 	}
 
 	r := bytes.NewReader(xmlData)
-	var created bool = false
+	var created = false
 
 	maxAttempts := c.maxAttempts
 
@@ -192,15 +209,15 @@ func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, 
 			// 	return nil, fmt.Errorf("failed to charge card: %s", verifyTokenResponse.ResultExplanation)
 			// }
 			return &verifyTokenResponse, nil
-		} else {
-
-			return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
 		}
+
+		return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
 	}
 
 	return nil, fmt.Errorf("failed to process request after %d attempts", c.maxAttempts)
 }
 
+// ChargeCreditCard is used for charging a card directly. Do not use this yet.
 func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string, token *CreateTokenResponse) (*ChargeCreditCardResponse, error) {
 	if token == nil {
 		return nil, fmt.Errorf("failed to get token: nil value passed as 'token'")
@@ -212,7 +229,7 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 
 	cardRequest := &ChargeCreditCardRequest{
 		CompanyToken:     c.Token,
-		Request:          OpChargeTokenCreditCard,
+		Request:          opChargeTokenCreditCard,
 		TransactionToken: token.TransToken,
 		CreditCardNumber: cardNumber,
 		// The API doesn't accept  an expiry with MM/YY it requires MMYY
@@ -231,9 +248,9 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 		},
 	}
 
-	url := TestApiUrl
+	url := testAPIURL
 	if !c.Debug {
-		url = LiveApiUrl
+		url = liveAPIURL
 	} else {
 		// TODO: log that we are using debug
 	}
@@ -287,10 +304,12 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 	return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
 }
 
+// CancelToken initiates token cancellations - NOT YET IMPLEMENTED
 func (c *Client) CancelToken() (*CancelTokenResponse, error) {
-	return nil, fmt.Errorf("not implemented!")
+	return nil, fmt.Errorf("not implemented")
 }
 
+// RefundToken initiates token refunds - NOT YET IMPLEMENTED
 func (c *Client) RefundToken() (*RefundTokenResponse, error) {
-	return nil, fmt.Errorf("not implemented!")
+	return nil, fmt.Errorf("not implemented")
 }

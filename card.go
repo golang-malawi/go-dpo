@@ -2,25 +2,25 @@ package dpo
 
 import "encoding/xml"
 
-type ChargeTokenResponseCode string
+type chargeTokenResponseCode string
 
 const (
-	TransactionCharged     ChargeTokenResponseCode = "000"
-	TransactionAlreadyPaid ChargeTokenResponseCode = "200"
-	TokenMissing           ChargeTokenResponseCode = "801"
-	InvalidToken           ChargeTokenResponseCode = "802"
-	MissingRequestOrName   ChargeTokenResponseCode = "803"
-	XMLError               ChargeTokenResponseCode = "804"
-	DataMismatch           ChargeTokenResponseCode = "902"
-	MissingMandatoryFields ChargeTokenResponseCode = "950"
-	TransactionDenied      ChargeTokenResponseCode = "999"
+	TransactionCharged     chargeTokenResponseCode = "000" // TransactionCharged Transaction charged
+	TransactionAlreadyPaid chargeTokenResponseCode = "200" // TransactionAlreadyPaid Transaction alreadyp aid
+	TokenMissing           chargeTokenResponseCode = "801" // TokenMissing Token missing
+	InvalidToken           chargeTokenResponseCode = "802" // InvalidToken Invalid token
+	MissingRequestOrName   chargeTokenResponseCode = "803" // MissingRequestOrName Missing request or name
+	XMLError               chargeTokenResponseCode = "804" // XMLError Xml error
+	DataMismatch           chargeTokenResponseCode = "902" // DataMismatch Data mismatch
+	MissingMandatoryFields chargeTokenResponseCode = "950" // MissingMandatoryFields Missing mandatory fields
+	TransactionDenied      chargeTokenResponseCode = "999" // TransactionDenied Transaction denied
 )
 
 const (
-	OpChargeTokenCreditCard = "chargeTokenCreditCard"
+	opChargeTokenCreditCard = "chargeTokenCreditCard"
 )
 
-func (v ChargeTokenResponseCode) Description() string {
+func (v chargeTokenResponseCode) Description() string {
 	switch v {
 	case TransactionCharged:
 		return "Transaction charged"
@@ -52,26 +52,7 @@ func (v ChargeTokenResponseCode) Description() string {
 	}
 }
 
-// <?xml version="1.0" encoding="utf-8"?>
-// <API3G>
-//   <CompanyToken>57466282-EBD7-4ED5-B699-8659330A6996</CompanyToken>
-//   <Request>chargeTokenCreditCard</Request>
-//   <TransactionToken>72983CAC-5DB1-4C7F-BD88-352066B71592</TransactionToken>
-//   <CreditCardNumber>123412341234</CreditCardNumber>
-//   <CreditCardExpiry>1214</CreditCardExpiry>
-//   <CreditCardCVV>333</CreditCardCVV>
-//   <CardHolderName>John Doe</CardHolderName>
-//   <ThreeD>
-//         <Enrolled>Y</Enrolled>
-//         <Paresstatus>Y</Paresstatus>
-//         <Eci>05</Eci>
-//         <Xid>DYYVcrwnujRMnHDy1wlP1Ggz8w0=</Xid>
-//         <Cavv>mHyn+7YFi1EUAREAAAAvNUe6Hv8=</Cavv>
-//         <Signature>_</Signature>
-//         <Veres>AUTHENTICATION_SUCCESSFUL</Veres>
-//         <Pares>eAHNV1mzokgW/isVPY9GFSCL0EEZkeyg7</Pares>
-//     </ThreeD>
-// </API3G>
+// ChargeCreditCardRequest is a request to charge a users card directly.
 type ChargeCreditCardRequest struct {
 	XMLName xml.Name `xml:"API3G"`
 
@@ -85,6 +66,7 @@ type ChargeCreditCardRequest struct {
 	ThreeD           ThreeDRequest `xml:"ThreeD"`
 }
 
+// ThreeDRequest request data for 3D systems
 type ThreeDRequest struct {
 	Enrolled    string `xml:"Enrolled"`
 	Paresstatus string `xml:"Paresstatus"`
@@ -96,23 +78,18 @@ type ThreeDRequest struct {
 	Pares       string `xml:"Pares"`
 }
 
-// <?xml version="1.0" encoding="UTF-8"?>
-// <API3G><Code>200</Code>
-// 	<Explanation>Transaction already paid</Explanation>
-// 	<RedirectUrl>https://redirect.com</RedirectUrl>
-// 	<BackUrl></BackUrl>
-// 	<declinedUrl></declinedUrl>
-// </API3G>
+// ChargeCreditCardResponse response returned from after processing a credit card charge directly.
 type ChargeCreditCardResponse struct {
 	XMLName xml.Name `xml:"API3G"`
 
 	Result      string `xml:"Result"`
 	Explanation string `xml:"ResultExplanation"`
-	RedirectUrl string `xml:"RedirectUrl,omitempty"`
-	BackUrl     string `xml:"BackUrl,omitempty"`
-	DeclinedUrl string `xml:"declinedUrl,omitempty"`
+	RedirectURL string `xml:"RedirectUrl,omitempty"`
+	BackURL     string `xml:"BackUrl,omitempty"`
+	DeclinedURL string `xml:"declinedUrl,omitempty"`
 }
 
+// IsError determines whether the card response is an error or not.
 func (c *ChargeCreditCardResponse) IsError() bool {
 	return c.Result != "000"
 }
