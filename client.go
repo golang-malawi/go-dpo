@@ -96,13 +96,18 @@ func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, e
 	if token == nil {
 		return nil, fmt.Errorf("token must not be nil")
 	}
-	url := testAPIURL
-	if !c.Debug {
-		url = liveAPIURL
+	var url string
+	var xmlData []byte
+	var err error
+
+	if c.Debug {
+		url = testAPIURL
+		xmlData, err = xmlMarshalWithHeaderDebug(token)
 	} else {
-		// TODO: log that we are using debug
+		url = liveAPIURL
+		xmlData, err = xmlMarshalWithHeader(token)
 	}
-	xmlData, err := xmlMarshalWithHeader(token)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to form XML request: %s got: %v", string(xmlData), err)
 	}
@@ -156,14 +161,18 @@ func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, 
 		TransactionToken: token.TransToken,
 	}
 
-	//TODO: Validate the token
-	url := testAPIURL
-	if !c.Debug {
-		url = liveAPIURL
+	var url string
+	var xmlData []byte
+	var err error
+
+	if c.Debug {
+		url = testAPIURL
+		xmlData, err = xmlMarshalWithHeaderDebug(verifyRequest)
 	} else {
-		// TODO: log that we are using debug
+		url = liveAPIURL
+		xmlData, err = xmlMarshalWithHeader(verifyRequest)
 	}
-	xmlData, err := xmlMarshalWithHeader(verifyRequest)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to form XML request: %s got: %v", string(xmlData), err)
 	}
@@ -209,9 +218,9 @@ func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, 
 			// 	return nil, fmt.Errorf("failed to charge card: %s", verifyTokenResponse.ResultExplanation)
 			// }
 			return &verifyTokenResponse, nil
+		} else if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+			return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
 		}
-
-		return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
 	}
 
 	return nil, fmt.Errorf("failed to process request after %d attempts", c.maxAttempts)
@@ -248,13 +257,18 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 		},
 	}
 
-	url := testAPIURL
-	if !c.Debug {
-		url = liveAPIURL
+	var url string
+	var xmlData []byte
+	var err error
+
+	if c.Debug {
+		url = testAPIURL
+		xmlData, err = xmlMarshalWithHeaderDebug(cardRequest)
 	} else {
-		// TODO: log that we are using debug
+		url = liveAPIURL
+		xmlData, err = xmlMarshalWithHeader(cardRequest)
 	}
-	xmlData, err := xmlMarshalWithHeader(cardRequest)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to form XML request: %s got: %v", string(xmlData), err)
 	}

@@ -22,7 +22,7 @@ func main() {
 
 	token, err := client.CreateToken(createTokenRequest)
 	if err != nil {
-		log.Fatalf("failed to create token", err)
+		log.Fatalf("failed to create token %v", err)
 	}
 
 	time.Sleep(30 * time.Second)
