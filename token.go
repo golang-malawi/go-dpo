@@ -126,7 +126,10 @@ type VerifyTokenResponse struct {
 // CancelTokenRequest represents a request to cancel a previously created token.
 type CancelTokenRequest struct {
 	XMLName xml.Name `xml:"API3G"`
-	// TODO: implement me!
+
+	CompanyToken string `xml:"CompanyToken"`
+	Request      string `xml:"Request"`
+	Token        string `xml:"TransactionToken"`
 }
 
 // CancelTokenResponse is the result of requesting a cancel token and depending on .Result may be an error or not.
@@ -140,7 +143,14 @@ type CancelTokenResponse struct {
 // RefundTokenRequest represents a request to initiate a refund
 type RefundTokenRequest struct {
 	XMLName xml.Name `xml:"API3G"`
-	// TODO: implement me!
+
+	CompanyToken   string    `xml:"CompanyToken"`
+	Request        string    `xml:"Request"`
+	Token          string    `xml:"TransactionToken"`
+	RefundAmount   big.Float `xml:"refundAmount"`   // RefundAmount Requested refund amount. (Mandatory)
+	RefundDetails  string    `xml:"refundDetails"`  // RefundDetails Requested refund description. (Mandatory)
+	RefundRef      string    `xml:"refundRef"`      // refundRef Refund reference.	(Optional)
+	RefundApproval int8      `xml:"refundApproval"` // refundApproval In case it being sent, refund will be checked by a checker (Optional)
 }
 
 // RefundTokenResponse represents response from initiating a refund request.

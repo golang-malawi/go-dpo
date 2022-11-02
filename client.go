@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"strings"
 	"time"
@@ -319,11 +320,164 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 }
 
 // CancelToken initiates token cancellations - NOT YET IMPLEMENTED
-func (c *Client) CancelToken() (*CancelTokenResponse, error) {
-	return nil, fmt.Errorf("not implemented")
+func (c *Client) CancelToken(tokenStr string) (*CancelTokenResponse, error) {
+	cancelRequest := &CancelTokenRequest{
+		Request:      "cancelToken",
+		CompanyToken: c.Token,
+		Token:        tokenStr,
+	}
+
+	var url string
+	var xmlData []byte
+	var err error
+
+	if c.Debug {
+		url = testAPIURL
+		xmlData, err = xmlMarshalWithHeaderDebug(cancelRequest)
+	} else {
+		url = liveAPIURL
+		xmlData, err = xmlMarshalWithHeader(cancelRequest)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to form XML request: %s got: %v", string(xmlData), err)
+	}
+
+	if c.Debug {
+		fmt.Printf("using request body: %s\n", string(xmlData))
+	}
+
+	r := bytes.NewReader(xmlData)
+	var created = false
+
+	maxAttempts := c.maxAttempts
+
+	for i := 0; !created && i < maxAttempts; i++ {
+		req, err := http.NewRequest("POST", url, r)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Add("User-Agent", "go-dpo: https://github.com/nndi-oss/go-dpo/v1-beta")
+		req.Header.Add("Content-Type", "application/xml")
+		req.Header.Add("Cache-control", "no-cache")
+
+		resp, err := c.http.Do(req)
+
+		if err != nil {
+			return nil, err
+		}
+
+		bodyData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read body: %s got: %v", string(bodyData), err)
+		}
+		if c.Debug {
+			fmt.Printf("got response body: %s\n", string(bodyData))
+		}
+		var cancelTokenResponse CancelTokenResponse
+		if resp.StatusCode == http.StatusOK {
+			err = xml.Unmarshal(bodyData, &cancelTokenResponse)
+			if err != nil {
+				return nil, fmt.Errorf("failed unmarshal response: %v", err)
+			}
+
+			switch cancelTokenResponse.Result {
+			case "000":
+				return &cancelTokenResponse, nil
+			case "999", "804", "950":
+			default:
+				return &cancelTokenResponse, fmt.Errorf("dpo error: %s", cancelTokenResponse.ResultExplanation)
+			}
+		} else if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+			return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
+		}
+	}
+
+	return nil, fmt.Errorf("failed to process request after %d attempts", c.maxAttempts)
 }
 
 // RefundToken initiates token refunds - NOT YET IMPLEMENTED
-func (c *Client) RefundToken() (*RefundTokenResponse, error) {
-	return nil, fmt.Errorf("not implemented")
+func (c *Client) RefundToken(tokenStr string, refundAmount *big.Float, refundRef, description string, requiresApproval bool) (*RefundTokenResponse, error) {
+	refundApproval := 0
+	if requiresApproval {
+		refundApproval = 1
+	}
+	refundRequest := &RefundTokenRequest{
+		CompanyToken:   c.Token,
+		Request:        "refundToken",
+		Token:          tokenStr,
+		RefundAmount:   big.Float{},
+		RefundDetails:  description,
+		RefundRef:      refundRef,
+		RefundApproval: int8(refundApproval),
+	}
+
+	var url string
+	var xmlData []byte
+	var err error
+
+	if c.Debug {
+		url = testAPIURL
+		xmlData, err = xmlMarshalWithHeaderDebug(refundRequest)
+	} else {
+		url = liveAPIURL
+		xmlData, err = xmlMarshalWithHeader(refundRequest)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to form XML request: %s got: %v", string(xmlData), err)
+	}
+
+	if c.Debug {
+		fmt.Printf("using request body: %s\n", string(xmlData))
+	}
+
+	r := bytes.NewReader(xmlData)
+	var created = false
+
+	maxAttempts := c.maxAttempts
+
+	for i := 0; !created && i < maxAttempts; i++ {
+		req, err := http.NewRequest("POST", url, r)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Add("User-Agent", "go-dpo: https://github.com/nndi-oss/go-dpo/v1-beta")
+		req.Header.Add("Content-Type", "application/xml")
+		req.Header.Add("Cache-control", "no-cache")
+
+		resp, err := c.http.Do(req)
+
+		if err != nil {
+			return nil, err
+		}
+
+		bodyData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read body: %s got: %v", string(bodyData), err)
+		}
+		if c.Debug {
+			fmt.Printf("got response body: %s\n", string(bodyData))
+		}
+		var refundTokenResponse RefundTokenResponse
+		if resp.StatusCode == http.StatusOK {
+			err = xml.Unmarshal(bodyData, &refundTokenResponse)
+			if err != nil {
+				return nil, fmt.Errorf("failed unmarshal response: %v", err)
+			}
+
+			switch refundTokenResponse.Result {
+			case "000":
+				return &refundTokenResponse, nil
+			case "801", "802", "803", "804", "950", "999":
+			default:
+				return &refundTokenResponse, fmt.Errorf("dpo error: %s", refundTokenResponse.ResultExplanation)
+			}
+
+		} else if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+			return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
+		}
+	}
+
+	return nil, fmt.Errorf("failed to process request after %d attempts", c.maxAttempts)
 }
