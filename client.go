@@ -13,6 +13,10 @@ import (
 	"time"
 )
 
+const (
+	defaultUA = "go-dpo: https://github.com/nndi-oss/go-dpo"
+)
+
 // Client struct represents a client and it's configuration for working with the DPO API.
 // The client provides functions to initiate, verify, cancel and revoke payment tokens.
 // The client uses a basic net/http http.Client.
@@ -20,6 +24,7 @@ type Client struct {
 	Debug       bool   // Determines whether to use test or live url
 	Token       string // Credentials key for the company
 	http        *http.Client
+	UserAgent   string
 	maxAttempts int // Maximum number of attempts per operation
 	GenerateRef func() string
 }
@@ -77,6 +82,7 @@ func NewClient(companyToken string, debug bool) *Client {
 	return &Client{
 		Debug:       debug,
 		Token:       companyToken,
+		UserAgent:   defaultUA,
 		maxAttempts: 5, // other DPO libraries use 10: see - TODO: add link
 		GenerateRef: defaultCompanyRefGenerator,
 		http: &http.Client{
@@ -89,6 +95,14 @@ func NewClient(companyToken string, debug bool) *Client {
 // companyToken the token to use for API calls
 func NewLiveClient(companyToken string) *Client {
 	return NewClient(companyToken, false)
+}
+
+func (c *Client) SetUserAgent(userAgent string) {
+	if userAgent == "" {
+		c.UserAgent = defaultUA
+		return
+	}
+	c.UserAgent = userAgent
 }
 
 // CreateToken creates a token that can be used to perform payments. This is the first step in the payment flow with DPO
@@ -123,7 +137,7 @@ func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, e
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("User-Agent", "go-dpo: https://github.com/nndi-oss/go-dpo/v1-beta")
+	req.Header.Add("User-Agent", c.UserAgent)
 	req.Header.Add("Content-Type", "application/xml")
 	req.Header.Add("Cache-control", "no-cache")
 
@@ -192,7 +206,7 @@ func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, 
 		if err != nil {
 			return nil, err
 		}
-		req.Header.Add("User-Agent", "go-dpo: https://github.com/nndi-oss/go-dpo/v1-beta")
+		req.Header.Add("User-Agent", c.UserAgent)
 		req.Header.Add("Content-Type", "application/xml")
 		req.Header.Add("Cache-control", "no-cache")
 
@@ -283,7 +297,7 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("User-Agent", "go-dpo: https://github.com/nndi-oss/go-dpo/v1-beta")
+	req.Header.Add("User-Agent", c.UserAgent)
 	req.Header.Add("Content-Type", "application/xml")
 	req.Header.Add("Cache-control", "no-cache")
 
@@ -357,7 +371,7 @@ func (c *Client) CancelToken(tokenStr string) (*CancelTokenResponse, error) {
 		if err != nil {
 			return nil, err
 		}
-		req.Header.Add("User-Agent", "go-dpo: https://github.com/nndi-oss/go-dpo/v1-beta")
+		req.Header.Add("User-Agent", c.UserAgent)
 		req.Header.Add("Content-Type", "application/xml")
 		req.Header.Add("Cache-control", "no-cache")
 
@@ -442,7 +456,7 @@ func (c *Client) RefundToken(tokenStr string, refundAmount *big.Float, refundRef
 		if err != nil {
 			return nil, err
 		}
-		req.Header.Add("User-Agent", "go-dpo: https://github.com/nndi-oss/go-dpo/v1-beta")
+		req.Header.Add("User-Agent", c.UserAgent)
 		req.Header.Add("Content-Type", "application/xml")
 		req.Header.Add("Cache-control", "no-cache")
 

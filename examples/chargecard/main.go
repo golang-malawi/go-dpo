@@ -16,6 +16,8 @@ func main() {
 
 	client := dpo.NewClient(clientToken, true)
 
+	client.SetUserAgent("Example User Agent")
+
 	createTokenRequest := client.NewCreateTokenRequest(clientToken, "USD", big.NewFloat(0.30))
 
 	createTokenRequest.AddService("3854", "Ecommerce", time.Now())
