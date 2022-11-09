@@ -5,10 +5,16 @@ Unofficial library for working with  DPOs APIs for payment processing in Go appl
 > NOTE: This is a work in progress and NOT production ready. 
 > The APIs are likely to change very frequently until we get to a v1. ymmv...
 
-# LICENSE
+```sh
+$ go get github.com/nndi-oss/go-dpo
+```
+
+Please check out [the examples](./examples/)
+
+## LICENSE
 
 [MIT LICENSE](LICENSE)
 
 ---
 
-NNDI 
+NNDI
