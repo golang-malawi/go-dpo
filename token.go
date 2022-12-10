@@ -26,8 +26,8 @@ func (c *Client) NewCreateTokenRequest(companyToken string, paymentCurrency stri
 			PaymentAmount:    amount.String(),
 			PaymentCurrency:  paymentCurrency,
 			CompanyRef:       c.GenerateRef(),
-			RedirectURL:      "",
-			BackURL:          "",
+			RedirectURL:      c.RedirectURL,
+			BackURL:          c.BackURL,
 			CompanyRefUnique: 0, // 0 - not unique, 1 - duplicate request
 			PTL:              "5",
 		},

@@ -27,6 +27,9 @@ type Client struct {
 	UserAgent   string
 	maxAttempts int // Maximum number of attempts per operation
 	GenerateRef func() string
+
+	RedirectURL string // RedirectURL the url to redirect to when payment flow completes
+	BackURL     string // BackURL is the url to redirect to when payment fails or is cancelled
 }
 
 // defaultCompanyRefGenerator is a function that generates a string that can be used as a Transaction ID
@@ -85,6 +88,8 @@ func NewClient(companyToken string, debug bool) *Client {
 		UserAgent:   defaultUA,
 		maxAttempts: 5, // other DPO libraries use 10: see - TODO: add link
 		GenerateRef: defaultCompanyRefGenerator,
+		RedirectURL: "",
+		BackURL:     "",
 		http: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -97,12 +102,31 @@ func NewLiveClient(companyToken string) *Client {
 	return NewClient(companyToken, false)
 }
 
+// NewDebugClient creates a new Client that has debug set to true
+// companyToken the token to use for API calls
+func NewDebugClient(companyToken string) *Client {
+	return NewClient(companyToken, false)
+}
+
+// SetUserAgent sets the user agent to be used with all HTTP requests to the DPO API
 func (c *Client) SetUserAgent(userAgent string) {
 	if userAgent == "" {
 		c.UserAgent = defaultUA
 		return
 	}
 	c.UserAgent = userAgent
+}
+
+// SetRedirectURL sets the redirect URL which is used for all requests that require a redirect url
+// in most cases this can be overridden by using a similar function call on the request type
+func (c *Client) SetRedirectURL(url string) {
+	c.RedirectURL = url
+}
+
+// SetBackURL sets the back/cancel URL which is used for all requests that require a back url
+// in most cases this can be overridden by using a similar function call on the request type
+func (c *Client) SetBackURL(url string) {
+	c.BackURL = url
 }
 
 // CreateToken creates a token that can be used to perform payments. This is the first step in the payment flow with DPO
