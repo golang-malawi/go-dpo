@@ -7,11 +7,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/nndi-oss/go-dpo"
+	"github.com/golang-malawi/go-dpo"
 )
 
 func main() {
-
 	clientToken := os.Getenv("DPO_TOKEN")
 
 	client := dpo.NewClient(clientToken, true)

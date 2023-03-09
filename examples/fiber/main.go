@@ -11,7 +11,7 @@ import (
 	"github.com/gofiber/template/html"
 	"github.com/joho/godotenv"
 
-	"github.com/nndi-oss/go-dpo"
+	"github.com/golang-malawi/go-dpo"
 )
 
 type DPOConfig struct {

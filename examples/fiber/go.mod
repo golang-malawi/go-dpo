@@ -1,6 +1,6 @@
-module github.com/nndi-oss/go-dpo/examples/fiber
+module github.com/golang-malawi/go-dpo/examples/fiber
 
-replace github.com/nndi-oss/go-dpo => ../../
+replace github.com/golang-malawi/go-dpo => ../../
 
 go 1.18
 
@@ -8,7 +8,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.38.1
 	github.com/gofiber/template v1.7.1
 	github.com/joho/godotenv v1.4.0
-	github.com/nndi-oss/go-dpo v0.0.0-00010101000000-000000000000
+	github.com/golang-malawi/go-dpo v0.0.0-00010101000000-000000000000
 )
 
 require (

@@ -6,7 +6,7 @@ Unofficial library for working with  DPOs APIs for payment processing in Go appl
 > The APIs are likely to change very frequently until we get to a v1. ymmv...
 
 ```sh
-$ go get github.com/nndi-oss/go-dpo
+$ go get github.com/golang-malawi/go-dpo
 ```
 
 Please check out [the examples](./examples/)

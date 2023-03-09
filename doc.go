@@ -5,12 +5,11 @@
 //
 // You are recommended to set the user agent for the client to some string that identifies your application.
 //
-//		clientToken := os.Getenv("DPO_TOKEN")
-//		client := dpo.NewClient(clientToken, true)
-//		client.SetUserAgent("Example User Agent")
+//	clientToken := os.Getenv("DPO_TOKEN")
+//	client := dpo.NewClient(clientToken, true)
+//	client.SetUserAgent("Example User Agent")
 //
 // # Usage: Error Handling
 //
 // The dpo package exposes errors that are thrown from DPO API.
-//
 package dpo

@@ -1,4 +1,4 @@
-module github.com/nndi-oss/go-dpo
+module github.com/golang-malawi/go-dpo
 
 go 1.18
 

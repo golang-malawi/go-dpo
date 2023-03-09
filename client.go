@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultUA = "go-dpo: https://github.com/nndi-oss/go-dpo"
+	defaultUA = "go-dpo: https://github.com/golang-malawi/go-dpo"
 )
 
 // Client struct represents a client and it's configuration for working with the DPO API.
@@ -221,7 +221,7 @@ func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, 
 	}
 
 	r := bytes.NewReader(xmlData)
-	var created = false
+	created := false
 
 	maxAttempts := c.maxAttempts
 
@@ -235,7 +235,6 @@ func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, 
 		req.Header.Add("Cache-control", "no-cache")
 
 		resp, err := c.http.Do(req)
-
 		if err != nil {
 			return nil, err
 		}
@@ -326,7 +325,6 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 	req.Header.Add("Cache-control", "no-cache")
 
 	resp, err := c.http.Do(req)
-
 	if err != nil {
 		return nil, err
 	}
@@ -386,7 +384,7 @@ func (c *Client) CancelToken(tokenStr string) (*CancelTokenResponse, error) {
 	}
 
 	r := bytes.NewReader(xmlData)
-	var created = false
+	created := false
 
 	maxAttempts := c.maxAttempts
 
@@ -400,7 +398,6 @@ func (c *Client) CancelToken(tokenStr string) (*CancelTokenResponse, error) {
 		req.Header.Add("Cache-control", "no-cache")
 
 		resp, err := c.http.Do(req)
-
 		if err != nil {
 			return nil, err
 		}
@@ -471,7 +468,7 @@ func (c *Client) RefundToken(tokenStr string, refundAmount *big.Float, refundRef
 	}
 
 	r := bytes.NewReader(xmlData)
-	var created = false
+	created := false
 
 	maxAttempts := c.maxAttempts
 
@@ -485,7 +482,6 @@ func (c *Client) RefundToken(tokenStr string, refundAmount *big.Float, refundRef
 		req.Header.Add("Cache-control", "no-cache")
 
 		resp, err := c.http.Do(req)
-
 		if err != nil {
 			return nil, err
 		}

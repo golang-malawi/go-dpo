@@ -3,7 +3,7 @@ package dpo_test
 import (
 	"testing"
 
-	"github.com/nndi-oss/go-dpo"
+	"github.com/golang-malawi/go-dpo"
 	"github.com/stretchr/testify/assert"
 )
 
