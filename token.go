@@ -16,7 +16,7 @@ type CreateTokenRequest struct {
 	Services     []Service              `xml:"Services>Service"`
 }
 
-// NewCreateTokenRequest creates a new token that can be used in client.VerifyToken calls
+// NewCreateTokenRequest creates a new token that can be used in client.VerifyToken calls.
 func (c *Client) NewCreateTokenRequest(companyToken string, paymentCurrency string, amount *big.Float) *CreateTokenRequest {
 	// TODO: add validation before creating token
 	return &CreateTokenRequest{
@@ -140,7 +140,7 @@ type CancelTokenResponse struct {
 	ResultExplanation string `xml:"ResultExplanation"`
 }
 
-// RefundTokenRequest represents a request to initiate a refund
+// RefundTokenRequest represents a request to initiate a refund.
 type RefundTokenRequest struct {
 	XMLName xml.Name `xml:"API3G"`
 

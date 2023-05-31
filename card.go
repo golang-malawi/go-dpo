@@ -66,7 +66,7 @@ type ChargeCreditCardRequest struct {
 	ThreeD           ThreeDRequest `xml:"ThreeD"`
 }
 
-// ThreeDRequest request data for 3D systems
+// ThreeDRequest request data for 3D systems.
 type ThreeDRequest struct {
 	Enrolled    string `xml:"Enrolled"`
 	Paresstatus string `xml:"Paresstatus"`

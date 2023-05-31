@@ -13,7 +13,7 @@ type ChargeTokenMobileRequest struct {
 	MNOcountry       string   `xml:"MNOcountry"`
 }
 
-// ChargeTokenMobileResponse is a response from a ChargeTokenMobileRequest
+// ChargeTokenMobileResponse is a response from a ChargeTokenMobileRequest.
 type ChargeTokenMobileResponse struct {
 	XMLName        xml.Name `xml:"API3G"`
 	Code           int      `xml:"Code"`
