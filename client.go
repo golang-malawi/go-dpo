@@ -32,7 +32,7 @@ type Client struct {
 	BackURL     string // BackURL is the url to redirect to when payment fails or is cancelled
 }
 
-// defaultCompanyRefGenerator is a function that generates a string that can be used as a Transaction ID
+// defaultCompanyRefGenerator is a function that generates a string that can be used as a Transaction ID.
 func defaultCompanyRefGenerator() string {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
@@ -43,7 +43,7 @@ func defaultCompanyRefGenerator() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-// xmlMarshallWithHeader marshals dat into XML with the xml header prepended
+// xmlMarshallWithHeader marshals dat into XML with the xml header prepended.
 func xmlMarshalWithHeader(data any) ([]byte, error) {
 	xmlstring, err := xml.Marshal(data) // xml.MarshalIndent(data, "", "    ")
 	if err != nil {
@@ -54,7 +54,7 @@ func xmlMarshalWithHeader(data any) ([]byte, error) {
 	return xmlstring, nil
 }
 
-// xmlMarshalWithHeaderDebug for debugging, pretty prints the marshalled XML
+// xmlMarshalWithHeaderDebug for debugging, pretty prints the marshalled XML.
 func xmlMarshalWithHeaderDebug(data any) ([]byte, error) {
 	xmlstring, err := xml.MarshalIndent(data, "", "    ")
 	if err != nil {
@@ -65,8 +65,8 @@ func xmlMarshalWithHeaderDebug(data any) ([]byte, error) {
 	return xmlstring, nil
 }
 
-// MakePaymentURL creates a URL which should be passed to the User to redirect to the DPO system to complete the payment
-// Requires a non-nil token created using client.CreateToken
+// MakePaymentURL creates a URL which should be passed to the User to redirect to the DPO system to complete the payment.
+// Requires a non-nil token created using client.CreateToken.
 func (c *Client) MakePaymentURL(token *CreateTokenResponse) string {
 	if token == nil {
 		return ""
@@ -78,8 +78,8 @@ func (c *Client) MakePaymentURL(token *CreateTokenResponse) string {
 	return fmt.Sprintf("%s?ID=%s", livePayURL, token.TransToken)
 }
 
-// NewClient creates a new testing/debug client for 3G service
-// companyToken the token to use for API calls
+// NewClient creates a new testing/debug client for 3G service.
+// companyToken the token to use for API calls.
 // debug whether to enable debug-mode or not - debug mode uses the test URLs instead of live URLs.
 func NewClient(companyToken string, debug bool) *Client {
 	return &Client{
@@ -96,19 +96,19 @@ func NewClient(companyToken string, debug bool) *Client {
 	}
 }
 
-// NewLiveClient creates a new Client that has debug set to false
-// companyToken the token to use for API calls
+// NewLiveClient creates a new Client that has debug set to false.
+// companyToken the token to use for API calls.
 func NewLiveClient(companyToken string) *Client {
 	return NewClient(companyToken, false)
 }
 
-// NewDebugClient creates a new Client that has debug set to true
-// companyToken the token to use for API calls
+// NewDebugClient creates a new Client that has debug set to true.
+// companyToken the token to use for API calls.
 func NewDebugClient(companyToken string) *Client {
 	return NewClient(companyToken, false)
 }
 
-// SetUserAgent sets the user agent to be used with all HTTP requests to the DPO API
+// SetUserAgent sets the user agent to be used with all HTTP requests to the DPO API.
 func (c *Client) SetUserAgent(userAgent string) {
 	if userAgent == "" {
 		c.UserAgent = defaultUA
@@ -117,20 +117,20 @@ func (c *Client) SetUserAgent(userAgent string) {
 	c.UserAgent = userAgent
 }
 
-// SetRedirectURL sets the redirect URL which is used for all requests that require a redirect url
-// in most cases this can be overridden by using a similar function call on the request type
+// SetRedirectURL sets the redirect URL which is used for all requests that require a redirect url,
+// in most cases this can be overridden by using a similar function call on the request type.
 func (c *Client) SetRedirectURL(url string) {
 	c.RedirectURL = url
 }
 
-// SetBackURL sets the back/cancel URL which is used for all requests that require a back url
-// in most cases this can be overridden by using a similar function call on the request type
+// SetBackURL sets the back/cancel URL which is used for all requests that require a back url,
+// in most cases this can be overridden by using a similar function call on the request type.
 func (c *Client) SetBackURL(url string) {
 	c.BackURL = url
 }
 
-// CreateToken creates a token that can be used to perform payments. This is the first step in the payment flow with DPO
-// Once the token is created it must be verified using client.VerifyToken
+// CreateToken creates a token that can be used to perform payments. This is the first step in the payment flow with DPO.
+// Once the token is created it must be verified using client.VerifyToken.
 func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, error) {
 	if token == nil {
 		return nil, fmt.Errorf("token must not be nil")
@@ -169,6 +169,7 @@ func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, e
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	bodyData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -192,7 +193,7 @@ func (c *Client) CreateToken(token *CreateTokenRequest) (*CreateTokenResponse, e
 	return nil, fmt.Errorf("invalid response code:%d body: %s", resp.StatusCode, string(bodyData))
 }
 
-// VerifyToken verifies the token with DPO site to prepare it for use for actual payment process
+// VerifyToken verifies the token with DPO site to prepare it for use for actual payment process.
 func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, error) {
 	verifyRequest := &VerifyTokenRequest{
 		Request:          "verifyToken",
@@ -238,6 +239,7 @@ func (c *Client) VerifyToken(token *CreateTokenResponse) (*VerifyTokenResponse, 
 		if err != nil {
 			return nil, err
 		}
+		defer resp.Body.Close()
 
 		bodyData, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
@@ -328,10 +330,8 @@ func (c *Client) ChargeCreditCard(cardHolder, cardNumber, cvv, cardExpiry string
 	if err != nil {
 		return nil, err
 	}
-	// got an error response,
-	if err != nil {
-		return nil, err
-	}
+	defer resp.Body.Close()
+
 	bodyData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read body: %s got: %v", string(bodyData), err)
@@ -401,6 +401,7 @@ func (c *Client) CancelToken(tokenStr string) (*CancelTokenResponse, error) {
 		if err != nil {
 			return nil, err
 		}
+		defer resp.Body.Close()
 
 		bodyData, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
@@ -485,6 +486,7 @@ func (c *Client) RefundToken(tokenStr string, refundAmount *big.Float, refundRef
 		if err != nil {
 			return nil, err
 		}
+		defer resp.Body.Close()
 
 		bodyData, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
